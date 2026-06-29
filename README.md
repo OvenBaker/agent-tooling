@@ -94,4 +94,8 @@ git clone https://github.com/OvenBaker/agent-fusion && cd agent-fusion
   `~/agents` fusion home (override with `FUSION_DIR`), `~/.local/share/santa`
   (override with `SANTA_HOME`) — all editable, none parameterised behind a config
   UI. It's personal tooling.
-- **No tests, no CI, no license file** (yet). Treat it accordingly.
+- **No tests, no CI.** Treat it accordingly.
+
+## License
+
+[The Unlicense](LICENSE) — released into the public domain. Do whatever you want.
