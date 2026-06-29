@@ -46,9 +46,9 @@ You don't need all three. Pick what's useful. Rough order of dependencies:
 cockpit + the `claude`/`codex` CLIs.
 
 ```bash
-# 1. santa — search your history          (needs the .NET 10 SDK)
+# 1. santa — search & resume your history  (needs the .NET 10 SDK)
 git clone https://github.com/OvenBaker/santa && cd santa
-./install.sh && santa refresh && santa query "that postgres migration we argued about"
+./install.sh && santa tui     # full-screen browse + search; or one-shot: santa query "…"
 
 # 2. cockpit — drive many sessions at once (needs tmux ≥3.4, jq, sqlite3)
 git clone https://github.com/OvenBaker/cockpit
