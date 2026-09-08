@@ -1,0 +1,34 @@
+# Runs the model-inventory verification pass (verify-models.prompt.md) through Sonnet in non-interactive
+# print mode, from inside the agent-tooling checkout so MODELS.md is found at the repo root.
+#
+# `--dangerously-skip-permissions` (inside run-verify.sh) is OPERATOR-APPROVED for this unit, 2026-09-08.
+# It is required because there is no human awake to answer a permission prompt on a timer-driven run. It
+# grants the session full tool access with no per-call gate; what holds the scope is the prompt's own
+# do-not list — read-only subagents in every target repo, no push, no PR, no merge — and not anything the
+# harness enforces.
+#
+# Sonnet rather than Fable/Opus: this is a grep-and-diff sweep, exactly the periodic work the house
+# orchestration rules put on Sonnet.
+
+[Unit]
+Description=Model inventory verification pass (fan-out Sonnet sweep)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/repos/agent-tooling
+# systemd --user does NOT inherit the login shell's PATH, and `claude`, `node` and `jq` all live in
+# ~/.local/bin. Without this the unit fails with "claude: command not found".
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin
+ExecStart=%h/repos/agent-tooling/tools/model-inventory/run-verify.sh
+
+# The journal is the fallback signal: if the script cannot reach Orbital to surface a failure, it exits
+# non-zero and `systemctl --user status model-inventory-verify` is what says so. The dated log file under
+# ~/.local/share/model-inventory/ is what a human actually reads.
+StandardOutput=journal
+StandardError=journal
+
+# A verification sweep that hangs must not hold the slot for ever. Two hours is generous for a fan-out of
+# this size and still bounded.
+TimeoutStartSec=2h

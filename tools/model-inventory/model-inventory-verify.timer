@@ -1,0 +1,18 @@
+# Every 14 days, matching the operator's stated cadence. Pairs with model-inventory-verify.service.
+#
+# OnUnitActiveSec=14d rather than an OnCalendar day-of-month stride: systemd calendar specs have no stride
+# that reliably means "every 14 days" — `*-*-*/14` drifts against month boundaries. Timing from the last
+# activation gives an exact fortnight. OnBootSec keeps a machine that was switched off from waiting a full
+# 14 days after it comes back, and Persistent=true catches up a run missed while it was down.
+
+[Unit]
+Description=Run the model inventory verification pass every 14 days
+
+[Timer]
+OnBootSec=1h
+OnUnitActiveSec=14d
+Persistent=true
+RandomizedDelaySec=1800
+
+[Install]
+WantedBy=timers.target
