@@ -23,8 +23,8 @@ WorkingDirectory=%h/repos/agent-tooling
 Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin
 ExecStart=%h/repos/agent-tooling/tools/model-inventory/run-verify.sh
 
-# The journal is the fallback signal: if the script cannot reach Orbital to surface a failure, it exits
-# non-zero and `systemctl --user status model-inventory-verify` is what says so. The dated log file under
+# The journal is the fallback signal: if the script cannot reach the work tracker to surface a failure, it
+# exits non-zero and `systemctl --user status model-inventory-verify` says so. The dated log file under
 # ~/.local/share/model-inventory/ is what a human actually reads.
 StandardOutput=journal
 StandardError=journal
