@@ -62,6 +62,12 @@ deliberately, with the divergence report as its evidence. See `tools/model-inven
 | `rerank.ondevice` | On-device reranking | Reordering local retrieval candidates before they reach a model. Use the exact model id given here: two ids that differ only by publisher are not known to be the same weights. | cross-encoder/ms-marco-MiniLM-L12-v2 (local ONNX) | — | 2026-09-08 |
 | `embed.search.hosted` | Hosted search embeddings | Embedding a corpus for search where a hosted API is simpler than shipping a local model. Pin the version explicitly; an unversioned id silently re-embeds against different weights. | text-embedding-3-small (pinned version) | — | 2026-09-08 |
 
+### Content
+
+| Slug | Use case | When to use it | Recommended | Acceptable alternatives | Last reviewed |
+|---|---|---|---|---|---|
+| `content.mechanical.batch` | Mechanical content transformation at scale | Auditing, repairing or rebuilding a large body of existing content against explicit written criteria, in batches with bounded concurrency. The distinguishing test is what checks the output: a schema, an id set, an enum, a score range — code, not anyone's judgment. The model is being asked for throughput and consistency, so paying for a reasoning tier it cannot use buys nothing. Reviewing that same content and forming an opinion on it is a different use case; send it to `interp.editorial.high`. | gpt-5.6-luna (medium) | gpt-5.6-luna (low) for the cheapest passes; gpt-5.6-terra (low) | 2026-09-08 |
+
 ### Classification and summarisation
 
 | Slug | Use case | When to use it | Recommended | Acceptable alternatives | Last reviewed |
@@ -70,6 +76,7 @@ deliberately, with the divergence report as its evidence. See `tools/model-inven
 | `classify.fallback.overloaded` | Classification fallback when the primary provider is overloaded | The second path, taken only when the primary provider returns capacity errors. It must be a genuinely different provider — a fallback on the same account is not a fallback. | gpt-5.5 | gpt-5.6-terra (medium) | 2026-09-08 |
 | `classify.session.router` | Session classification and summarisation router | A router that classifies or summarises captured sessions and lets the caller choose the model per request. It still needs a code-owned default: a router whose empty value means "whatever the CLI picks" is the failure this whole file exists to prevent. | claude-haiku-4-5 | claude-sonnet-5 | 2026-09-08 |
 | `summarize.digest` | Digest and backfill summarisation | Bulk summarisation of a backlog into digest form. Cheap per item, large item count, output read in aggregate. | claude-haiku-4-5-20251001 | claude-sonnet-5 | 2026-09-08 |
+| `summarize.rolling.fold` | Rolling state fold | A scheduled fold of a prior state document plus the events since, into a document that replaces it. Not digest work: there is one document, people read it as the current state of something, and it accumulates, so a confidently invented line survives every later fold. Give this lane no weaker fallback — a skipped fold is free, because the events wait and the next run takes them, while a wrong fold is not. | gpt-5.6-luna (medium) | — | 2026-09-08 |
 
 ### Delegated work
 
