@@ -82,10 +82,21 @@ deliberately, with the divergence report as its evidence. See `tools/model-inven
 
 | Slug | Use case | When to use it | Recommended | Acceptable alternatives | Last reviewed |
 |---|---|---|---|---|---|
-| `investigate.fanout.orchestrator` | Delegated investigation — orchestrator | The session that plans an investigation, fans work out to workers and synthesises what comes back. | gpt-5.6-terra (medium) | gpt-5.6-sol (high) for a genuinely contested question | 2026-09-08 |
-| `investigate.fanout.worker` | Delegated investigation — worker | The cheap end of the same work: one worker, one bounded question, a conclusion rather than a transcript. | gpt-5.6-sol (low) | gpt-5.6-luna (low) | 2026-09-08 |
+| `investigate.fanout.orchestrator` | In-code investigation pipeline — orchestrator | The orchestrator half of a fan-out that lives inside a program: it decomposes a question into bounded tasks, then combines what the workers return into the answer. Both ends are judgment-heavy, which is why this lane runs high. | gpt-5.6-sol (high) | gpt-5.6-sol (low) where the decomposition is routine | 2026-09-09 |
+| `investigate.fanout.worker` | In-code investigation pipeline — worker | One bounded read-only question answered against a repository, returning a finding plus citations that the calling code validates against real files and lines. Reached by a fan-out or by a single call; the unit of work is the same either way. | gpt-5.6-luna (medium) | gpt-5.6-luna (low) | 2026-09-09 |
+| `investigate.delegated.orchestrator` | Session-delegated investigation — orchestrator | Fan-out delegated from an interactive agent session, such as a rescue run or a second opinion, rather than from an in-code pipeline. A person asked for this, is waiting on it, and will read the result themselves. | gpt-5.6-terra (medium) | gpt-5.6-sol (high) for a genuinely contested question | 2026-09-09 |
+| `investigate.delegated.worker` | Session-delegated investigation — worker | The cheap end of the same session-delegated work: one worker, one bounded question, a conclusion rather than a transcript. `gpt-reserve` and `gpt-5.4-mini` were retired on 2026-09-08 and are not choices here. | gpt-5.6-sol (low) | gpt-5.6-luna (low) | 2026-09-09 |
 | `code.agentic.interactive` | Interactive agentic coding session | A session a human is watching and steering. The model is chosen at spawn time and the human is the check on it, which is why this is the one lane where an operator-selected default is acceptable. Nothing unattended may use this slug. | claude-opus-5 for build and architecture; claude-sonnet-5 for routine work | claude-fable-5-1 where the judgement genuinely warrants it | 2026-09-08 |
 | `verify.unattended` | Unattended verification sweep | Scheduled grep-and-diff work: confirm recorded facts against the code, report what moved. Cheap and mechanical, so it belongs on the cheaper model however important the output is. | claude-sonnet-5 | — | 2026-09-08 |
+
+## Changelog
+
+- **2026-09-09 — the investigation lanes were split in two.** A single pair of slugs was covering two
+  different kinds of work, and its recommendation described only one of them. Five independent
+  implementations of the *in-code* pipeline had all settled away from that recommendation and toward each
+  other, which is evidence about the default rather than about the five. The in-code slugs now record what
+  those implementations do, and the session-delegated pair keeps the original recommendation for the work it
+  always described. Nothing in any repository changed.
 
 ## Known CLI defaults
 
