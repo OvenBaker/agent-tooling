@@ -95,10 +95,10 @@ REPORT_MARKER='MODEL-INVENTORY-REPORT'
 if [[ "$DRY_RUN" == 1 ]]; then
   EXIT_CODE="$FAKE_EXIT"
   if [[ "$FAKE_EXIT" == 0 && "$FAKE_DRIFT" == 1 ]]; then
-    REPORT_BODY=$'MODEL-INVENTORY-REPORT\nconfirmed: 43\ndrifted: 2\ndiverged: 9\nnew-sites: 1\nretired: 1\nbranch: chore/model-inventory-'"$DATE"$'\ncommit: 4f1a9c2'
+    REPORT_BODY=$'MODEL-INVENTORY-REPORT\nconfirmed: 44\ndrifted: 2\ndiverged: 0\nnew-sites: 1\nretired: 1\nbranch: chore/model-inventory-'"$DATE"$'\ncommit: 4f1a9c2'
     BRANCH_PRESENT=1
   elif [[ "$FAKE_EXIT" == 0 ]]; then
-    REPORT_BODY=$'MODEL-INVENTORY-REPORT\nconfirmed: 46\ndrifted: 0\ndiverged: 9\nnew-sites: 0\nretired: 0\nbranch: none\ncommit: none'
+    REPORT_BODY=$'MODEL-INVENTORY-REPORT\nconfirmed: 44\ndrifted: 0\ndiverged: 0\nnew-sites: 0\nretired: 0\nbranch: none\ncommit: none'
     BRANCH_PRESENT=0
   else
     REPORT_BODY=''

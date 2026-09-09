@@ -59,7 +59,7 @@ deliberately, with the divergence report as its evidence. See `tools/model-inven
 | Slug | Use case | When to use it | Recommended | Acceptable alternatives | Last reviewed |
 |---|---|---|---|---|---|
 | `embed.ondevice` | On-device embedding | Building a local index with no network round trip and no per-call cost. | nomic-ai/nomic-embed-text-v1.5 (local ONNX) | — | 2026-09-08 |
-| `rerank.ondevice` | On-device reranking | Reordering local retrieval candidates before they reach a model. Use the exact model id given here: two ids that differ only by publisher are not known to be the same weights. | cross-encoder/ms-marco-MiniLM-L12-v2 (local ONNX) | — | 2026-09-08 |
+| `rerank.ondevice` | On-device reranking | Reordering local retrieval candidates before they reach a model. Name the id of the artifact actually loaded, not the id of the upstream model it was exported from — a label naming something the loader never fetches is worse than no label. | Xenova/ms-marco-MiniLM-L-12-v2 (local ONNX) | — | 2026-09-09 |
 | `embed.search.hosted` | Hosted search embeddings | Embedding a corpus for search where a hosted API is simpler than shipping a local model. Pin the version explicitly; an unversioned id silently re-embeds against different weights. | text-embedding-3-small (pinned version) | — | 2026-09-08 |
 
 ### Content
@@ -98,6 +98,13 @@ deliberately, with the divergence report as its evidence. See `tools/model-inven
   other, which is evidence about the default rather than about the five. The in-code slugs now record what
   those implementations do, and the session-delegated pair keeps the original recommendation for the work it
   always described. Nothing in any repository changed.
+
+- **2026-09-09 — `rerank.ondevice` now names the ONNX export, not the upstream model.** Two tools were
+  recorded as using different publishers' ids for the same reranker, which read as an inconsistency to
+  resolve. Both were in fact loading the identical export, verified by hash and by one tool's model directory
+  symlinking to the other's. The export is a re-export of `cross-encoder/ms-marco-MiniLM-L12-v2`
+  (Apache-2.0); the export repository carries no license file of its own. The recommendation was wrong, not
+  the code, and it was the recommendation that changed.
 
 ## Known CLI defaults
 
