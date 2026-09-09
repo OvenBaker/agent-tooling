@@ -115,9 +115,6 @@ which will change under us without a commit, a review or a signal.
 `code.agentic.interactive` is the single exception, and only because a human picks the model at spawn and is
 watching the result. Every other lane names its model.
 
-One legacy launch recipe still falls through to a CLI default. It is believed superseded and not live, and is
-tracked privately rather than here.
-
 ## Where the sites live
 
 The list of actual call sites — repo, file, mechanism, pinned model, and which slug each is meant to satisfy —
