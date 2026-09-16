@@ -42,7 +42,7 @@ on the ordinary window if he does not.
 
 | Outcome | What the operator sees |
 | --- | --- |
-| The pass failed — non-zero exit, or it finished without writing its `MODEL-INVENTORY-REPORT` block | An item, "Model inventory verification failed on `<date>`", carrying the exit code and the last 20 log lines. The unit also exits non-zero, so `systemctl --user status` agrees with the item. |
+| The pass failed — non-zero exit, or it finished without writing its `MODEL-INVENTORY-REPORT` block, or wrote one that is incomplete (a missing field, a count that is not an integer, an unfilled `<placeholder>`) | An item, "Model inventory verification failed on `<date>`", naming which of those it was, and carrying the exit code and the last 20 log lines. The unit also exits non-zero, so `systemctl --user status` agrees with the item. |
 | The pass found drift and committed it to `chore/model-inventory-<date>` | An item, "Model inventory drift found `<date>` — review branch `chore/model-inventory-<date>`", carrying the confirmed/drifted/diverged/new/retired counts. A branch nobody knows about is the same failure class as a silent failure, which is why this one is surfaced at all. |
 | The pass ran and nothing drifted | Nothing. The log is the record, and it carries the diverged count. |
 
@@ -58,7 +58,10 @@ an afternoon re-run's drift report.
 Re-running on the same day is the ordinary way to recover from a failed pass, and the log is one file per
 date, so a re-run appends beneath the run that failed. The script reads the report block only from the part
 of the log **its own run** wrote, never from an earlier one — otherwise a re-run that died without writing a
-block would find the earlier run's block still sitting in the file and be surfaced as that run's success.
+block would find the earlier run's block still sitting in the file and be surfaced as that run's success. For
+the same reason the block is checked for completeness, not merely for presence: a bare marker line, or the
+block's own template echoed back with its `<placeholder>` values intact, is enough to make the block look
+present, and accepting it would exit 0 and record the inventory as verified for a cycle nobody verified.
 
 If the POST itself fails, that goes in the log and the script exits non-zero, so systemd marks the unit failed
 and the journal carries it. A surfacing mechanism that can fail silently is worthless.

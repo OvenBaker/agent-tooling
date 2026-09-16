@@ -141,6 +141,32 @@ fi
 
 field() { printf '%s\n' "$REPORT_BODY" | sed -n "s/^$1: *//p" | head -1; }
 
+# A block that is PRESENT but not fully formed is not a result. This script's last incident was a pass that
+# wrote a prose report and no block; the close cousin is a pass that echoes the block's own template — which
+# this prompt necessarily shows inside a code fence — placeholders and all, and never writes a real one. A
+# bare marker line is enough to make REPORT_BODY non-empty, so without this the failure branch would not fire,
+# no branch would be found, and the run would exit 0 having recorded the inventory as verified for a cycle
+# nobody verified. Silent success is the same failure class as silent failure.
+REPORT_INVALID=''
+if [[ -n "$REPORT_BODY" ]]; then
+  for REQUIRED_FIELD in confirmed drifted diverged new-sites retired; do
+    FIELD_VALUE="$(field "$REQUIRED_FIELD")"
+    if [[ -z "$FIELD_VALUE" ]]; then
+      REPORT_INVALID="$REPORT_INVALID${REPORT_INVALID:+, }$REQUIRED_FIELD missing"
+    elif [[ ! "$FIELD_VALUE" =~ ^[0-9]+$ ]]; then
+      REPORT_INVALID="$REPORT_INVALID${REPORT_INVALID:+, }$REQUIRED_FIELD is not an integer ($FIELD_VALUE)"
+    fi
+  done
+  for REQUIRED_FIELD in branch commit; do
+    FIELD_VALUE="$(field "$REQUIRED_FIELD")"
+    if [[ -z "$FIELD_VALUE" ]]; then
+      REPORT_INVALID="$REPORT_INVALID${REPORT_INVALID:+, }$REQUIRED_FIELD missing"
+    elif [[ "$FIELD_VALUE" == "<"*">" ]]; then
+      REPORT_INVALID="$REPORT_INVALID${REPORT_INVALID:+, }$REQUIRED_FIELD is an unfilled placeholder"
+    fi
+  done
+fi
+
 # ── Decide what the operator is shown ─────────────────────────────────────────────────────────────────────
 
 SURFACE=none
@@ -149,12 +175,16 @@ TITLE=''
 SUMMARY=''
 DETAIL=''
 
-if [[ "$EXIT_CODE" != 0 || -z "$REPORT_BODY" ]]; then
+if [[ "$EXIT_CODE" != 0 || -z "$REPORT_BODY" || -n "$REPORT_INVALID" ]]; then
   SURFACE=failed
   SOURCE_ID="model-inventory-verify:$DATE"
   TITLE="Model inventory verification failed on $DATE"
   REASON="exit code $EXIT_CODE"
-  [[ -n "$REPORT_BODY" ]] || REASON="$REASON, no $REPORT_MARKER block in the log"
+  if [[ -z "$REPORT_BODY" ]]; then
+    REASON="$REASON, no $REPORT_MARKER block in the log"
+  elif [[ -n "$REPORT_INVALID" ]]; then
+    REASON="$REASON, the $REPORT_MARKER block is incomplete ($REPORT_INVALID)"
+  fi
   SUMMARY="The every-14-days model inventory pass did not verify the inventory this cycle ($REASON). The site inventory is now unverified until someone runs it again. The last 20 lines of the log are below; the whole log is at $LOG."
   if [[ "$DRY_RUN" == 1 ]]; then
     DETAIL=$'(dry run: the last 20 lines of '"$LOG"$' would be quoted here)'
