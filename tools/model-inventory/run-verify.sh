@@ -112,12 +112,25 @@ else
   log "starting model inventory verification pass (repo $REPO_ROOT)"
   EXIT_CODE=0
   cd "$REPO_ROOT"
+  # Where THIS run's output begins. The log is one file per DATE and appended to, so on a same-day re-run —
+  # exactly what recovering from a failed pass looks like — everything above this offset belongs to an earlier
+  # run and must not be read as this one's result. Without the offset, a re-run that died without writing a
+  # block would find the earlier run's block still in the file, the failure branch would never fire, and a
+  # failed re-run would be surfaced as the earlier run's success: the silent failure this script exists to
+  # prevent. `log` above has already created "$LOG", so `wc -c` always has a file to measure.
+  LOG_OFFSET="$(wc -c < "$LOG")"
   # `|| EXIT_CODE=$?` rather than a bare pipeline: `set -e` would abort here and the failure would never be
   # surfaced, which is the exact outcome this script exists to prevent.
   cat "$PROMPT" | claude -p --model sonnet --dangerously-skip-permissions --output-format text \
     >> "$LOG" 2>&1 || EXIT_CODE=$?
   log "claude exited $EXIT_CODE"
-  REPORT_BODY="$(sed -n "/^$REPORT_MARKER\$/,\$p" "$LOG" || true)"
+  # Within this run, take the LAST block: the prompt shows the block's template inside a code fence, so a run
+  # that quotes its instructions back before writing the real block must not be read from the quoted copy.
+  REPORT_BODY="$(tail -c "+$((LOG_OFFSET + 1))" "$LOG" | awk -v marker="$REPORT_MARKER" '
+    $0 == marker { block = "" }
+    block != "" || $0 == marker { block = block $0 "\n" }
+    END { printf "%s", block }
+  ' || true)"
   BRANCH_PRESENT=0
   # The branch is created wherever the private site inventory lives, not in this repo — the pass never
   # commits to the public one.
@@ -128,6 +141,32 @@ fi
 
 field() { printf '%s\n' "$REPORT_BODY" | sed -n "s/^$1: *//p" | head -1; }
 
+# A block that is PRESENT but not fully formed is not a result. This script's last incident was a pass that
+# wrote a prose report and no block; the close cousin is a pass that echoes the block's own template — which
+# this prompt necessarily shows inside a code fence — placeholders and all, and never writes a real one. A
+# bare marker line is enough to make REPORT_BODY non-empty, so without this the failure branch would not fire,
+# no branch would be found, and the run would exit 0 having recorded the inventory as verified for a cycle
+# nobody verified. Silent success is the same failure class as silent failure.
+REPORT_INVALID=''
+if [[ -n "$REPORT_BODY" ]]; then
+  for REQUIRED_FIELD in confirmed drifted diverged new-sites retired; do
+    FIELD_VALUE="$(field "$REQUIRED_FIELD")"
+    if [[ -z "$FIELD_VALUE" ]]; then
+      REPORT_INVALID="$REPORT_INVALID${REPORT_INVALID:+, }$REQUIRED_FIELD missing"
+    elif [[ ! "$FIELD_VALUE" =~ ^[0-9]+$ ]]; then
+      REPORT_INVALID="$REPORT_INVALID${REPORT_INVALID:+, }$REQUIRED_FIELD is not an integer ($FIELD_VALUE)"
+    fi
+  done
+  for REQUIRED_FIELD in branch commit; do
+    FIELD_VALUE="$(field "$REQUIRED_FIELD")"
+    if [[ -z "$FIELD_VALUE" ]]; then
+      REPORT_INVALID="$REPORT_INVALID${REPORT_INVALID:+, }$REQUIRED_FIELD missing"
+    elif [[ "$FIELD_VALUE" == "<"*">" ]]; then
+      REPORT_INVALID="$REPORT_INVALID${REPORT_INVALID:+, }$REQUIRED_FIELD is an unfilled placeholder"
+    fi
+  done
+fi
+
 # ── Decide what the operator is shown ─────────────────────────────────────────────────────────────────────
 
 SURFACE=none
@@ -136,12 +175,16 @@ TITLE=''
 SUMMARY=''
 DETAIL=''
 
-if [[ "$EXIT_CODE" != 0 || -z "$REPORT_BODY" ]]; then
+if [[ "$EXIT_CODE" != 0 || -z "$REPORT_BODY" || -n "$REPORT_INVALID" ]]; then
   SURFACE=failed
   SOURCE_ID="model-inventory-verify:$DATE"
   TITLE="Model inventory verification failed on $DATE"
   REASON="exit code $EXIT_CODE"
-  [[ -n "$REPORT_BODY" ]] || REASON="$REASON, no $REPORT_MARKER block in the log"
+  if [[ -z "$REPORT_BODY" ]]; then
+    REASON="$REASON, no $REPORT_MARKER block in the log"
+  elif [[ -n "$REPORT_INVALID" ]]; then
+    REASON="$REASON, the $REPORT_MARKER block is incomplete ($REPORT_INVALID)"
+  fi
   SUMMARY="The every-14-days model inventory pass did not verify the inventory this cycle ($REASON). The site inventory is now unverified until someone runs it again. The last 20 lines of the log are below; the whole log is at $LOG."
   if [[ "$DRY_RUN" == 1 ]]; then
     DETAIL=$'(dry run: the last 20 lines of '"$LOG"$' would be quoted here)'
