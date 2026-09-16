@@ -140,7 +140,11 @@ Edit `~/knowledge/workspace-operations/model-sites.md` only. After the fan-out r
 
 ## Report
 
-Write a short report (not a transcript) covering:
+Your output has **two parts, both required**: the prose report below, and then the
+machine-readable block specified in the last section of this file. The prose report alone is an
+incomplete pass — the script reads only the block, and treats its absence as a failed run.
+
+First, write a short report (not a transcript) covering:
 
 - Rows confirmed: count.
 - Rows drifted: list each, old value → new value.
@@ -155,12 +159,29 @@ Write a short report (not a transcript) covering:
   public map.
 - The branch name and commit sha you created in the site-inventory repo.
 
-### The machine-readable block — REQUIRED, and the last thing you write
+## Do-not list
+
+- No model invocations beyond the fan-out subagents' own reasoning — no test prompts, no "let's see
+  what this model says", no live API calls to any provider.
+- No edits to any recommendation in the public use-case map, and no commit in the public repo.
+- No edits in any target repo. Every subagent is read-only; only you write, and only to the private
+  site inventory.
+- **Nothing from the private site inventory may be written into the public repo.** No repo names, no
+  file paths, no product or project names, in any file there — including commit messages and the
+  report block. The public repo may name the private file's path and nothing else about it.
+- No secrets, tokens or credentials in the report or the commit — if a grep incidentally surfaces
+  one, redact it rather than quoting it.
+- No push, no PR, no merge. The branch is for the operator to review and land.
+
+## The machine-readable block — REQUIRED, and the last thing you write
 
 `run-verify.sh` reads this block to decide what the operator is shown. Its ABSENCE is treated as a
 failed pass even when the exit code is zero, because a run that produced no report produced nothing
-anyone can act on. So end your output with exactly this, one field per line, no surrounding prose,
-code fence or blank line inside it:
+anyone can act on — the prose report above is for a human and the script cannot read it. A pass that
+did all the work and omitted this block is recorded as a pass that did not happen.
+
+So end your output with exactly this, one field per line, no surrounding prose, code fence or blank
+line inside it. Nothing follows it — not a sign-off, not a summary, not a note about the branch:
 
 ```
 MODEL-INVENTORY-REPORT
@@ -178,17 +199,3 @@ only, never alternatives, and is reported every run — including a run where no
 site can be exactly as recorded and still be running a model its use case no longer recommends.
 `branch`/`commit` are `none` when nothing drifted and you therefore made no commit — that is the
 ordinary quiet outcome, not a failure.
-
-## Do-not list
-
-- No model invocations beyond the fan-out subagents' own reasoning — no test prompts, no "let's see
-  what this model says", no live API calls to any provider.
-- No edits to any recommendation in the public use-case map, and no commit in the public repo.
-- No edits in any target repo. Every subagent is read-only; only you write, and only to the private
-  site inventory.
-- **Nothing from the private site inventory may be written into the public repo.** No repo names, no
-  file paths, no product or project names, in any file there — including commit messages and the
-  report block. The public repo may name the private file's path and nothing else about it.
-- No secrets, tokens or credentials in the report or the commit — if a grep incidentally surfaces
-  one, redact it rather than quoting it.
-- No push, no PR, no merge. The branch is for the operator to review and land.

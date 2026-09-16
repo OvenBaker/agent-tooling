@@ -112,12 +112,25 @@ else
   log "starting model inventory verification pass (repo $REPO_ROOT)"
   EXIT_CODE=0
   cd "$REPO_ROOT"
+  # Where THIS run's output begins. The log is one file per DATE and appended to, so on a same-day re-run —
+  # exactly what recovering from a failed pass looks like — everything above this offset belongs to an earlier
+  # run and must not be read as this one's result. Without the offset, a re-run that died without writing a
+  # block would find the earlier run's block still in the file, the failure branch would never fire, and a
+  # failed re-run would be surfaced as the earlier run's success: the silent failure this script exists to
+  # prevent. `log` above has already created "$LOG", so `wc -c` always has a file to measure.
+  LOG_OFFSET="$(wc -c < "$LOG")"
   # `|| EXIT_CODE=$?` rather than a bare pipeline: `set -e` would abort here and the failure would never be
   # surfaced, which is the exact outcome this script exists to prevent.
   cat "$PROMPT" | claude -p --model sonnet --dangerously-skip-permissions --output-format text \
     >> "$LOG" 2>&1 || EXIT_CODE=$?
   log "claude exited $EXIT_CODE"
-  REPORT_BODY="$(sed -n "/^$REPORT_MARKER\$/,\$p" "$LOG" || true)"
+  # Within this run, take the LAST block: the prompt shows the block's template inside a code fence, so a run
+  # that quotes its instructions back before writing the real block must not be read from the quoted copy.
+  REPORT_BODY="$(tail -c "+$((LOG_OFFSET + 1))" "$LOG" | awk -v marker="$REPORT_MARKER" '
+    $0 == marker { block = "" }
+    block != "" || $0 == marker { block = block $0 "\n" }
+    END { printf "%s", block }
+  ' || true)"
   BRANCH_PRESENT=0
   # The branch is created wherever the private site inventory lives, not in this repo — the pass never
   # commits to the public one.

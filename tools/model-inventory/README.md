@@ -55,6 +55,11 @@ already exists. The failure case and the drift case use **different** `sourceId`
 and `model-inventory-drift:`) deliberately: sharing one key would mean a morning failure silently swallowed
 an afternoon re-run's drift report.
 
+Re-running on the same day is the ordinary way to recover from a failed pass, and the log is one file per
+date, so a re-run appends beneath the run that failed. The script reads the report block only from the part
+of the log **its own run** wrote, never from an earlier one — otherwise a re-run that died without writing a
+block would find the earlier run's block still sitting in the file and be surfaced as that run's success.
+
 If the POST itself fails, that goes in the log and the script exits non-zero, so systemd marks the unit failed
 and the journal carries it. A surfacing mechanism that can fail silently is worthless.
 
