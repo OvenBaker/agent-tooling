@@ -16,7 +16,7 @@ pair every 14 days.
 
 ## What it does
 
-`run-verify.sh` pipes `verify-models.prompt.md` into `claude -p --model sonnet`. That session reads both
+`run-verify.sh` pipes `verify-models.prompt.md` into `claude -p --model claude-sonnet-5-5`. That session reads both
 files, fans out one read-only subagent per repo in the site inventory, and confirms each row against the
 actual code while grepping for call sites nobody has recorded yet.
 
@@ -30,7 +30,7 @@ in the repo that holds it, and stops. It never pushes, opens a PR, or merges. It
 in `MODELS.md`, and never commits in this repo: moving a recommendation is a human decision, and the
 divergence report is its evidence.
 
-Sonnet, not Fable or Opus: this is a grep-and-diff sweep, which is exactly the periodic work the house
+Sonnet (pinned as `claude-sonnet-5-5`, never the alias), not Fable or Opus: this is a grep-and-diff sweep, which is exactly the periodic work the house
 orchestration rules put on the cheaper model.
 
 ## What surfaces, and when

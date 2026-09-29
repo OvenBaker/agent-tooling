@@ -32,6 +32,20 @@ decision. Your divergence report is the evidence for that decision, not the deci
    in the repo that holds the site inventory). If either is not, stop and report — do not verify on
    top of uncommitted changes that are not yours.
 
+## Running unattended
+
+This pass runs non-interactively (`claude -p`): when you end a turn, the session ends, and anything
+still outstanding is lost — including the report block, so the pass is recorded as failed.
+
+- Run every subagent in the **foreground** (blocking), or explicitly await it. Never launch one in the
+  background and then end your turn to "wait" for it — nothing will wake you.
+- Never end a turn while any subagent is outstanding. "Waiting on X" is not an ending; there is no one
+  to resume you.
+- If a subagent fails or times out, do not wait on it: record that repo as **unverified** (rows left
+  untouched, `last verified` not updated, named in the report) and carry on.
+- However the run goes, finish by writing the `MODEL-INVENTORY-REPORT` block (last section of this
+  file). A partial pass with a block beats a complete one without.
+
 ## Fan-out
 
 For each repo collected above, spawn one **read-only** subagent. Give each subagent:

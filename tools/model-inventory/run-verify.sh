@@ -104,7 +104,7 @@ if [[ "$DRY_RUN" == 1 ]]; then
     REPORT_BODY=''
     BRANCH_PRESENT=0
   fi
-  echo "[dry-run] would run: cat $PROMPT | claude -p --model sonnet --dangerously-skip-permissions --output-format text"
+  echo "[dry-run] would run: cat $PROMPT | claude -p --model claude-sonnet-5-5 --dangerously-skip-permissions --output-format text"
   echo "[dry-run] log would be: $LOG"
   echo "[dry-run] site inventory repo: $SITES_REPO"
   echo "[dry-run] simulated claude exit code: $EXIT_CODE"
@@ -121,7 +121,7 @@ else
   LOG_OFFSET="$(wc -c < "$LOG")"
   # `|| EXIT_CODE=$?` rather than a bare pipeline: `set -e` would abort here and the failure would never be
   # surfaced, which is the exact outcome this script exists to prevent.
-  cat "$PROMPT" | claude -p --model sonnet --dangerously-skip-permissions --output-format text \
+  cat "$PROMPT" | claude -p --model claude-sonnet-5-5 --dangerously-skip-permissions --output-format text \
     >> "$LOG" 2>&1 || EXIT_CODE=$?
   log "claude exited $EXIT_CODE"
   # Within this run, take the LAST block: the prompt shows the block's template inside a code fence, so a run
