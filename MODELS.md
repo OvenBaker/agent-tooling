@@ -88,9 +88,15 @@ deliberately, with the divergence report as its evidence. See `tools/model-inven
 | `investigate.delegated.orchestrator` | Session-delegated investigation — orchestrator | Fan-out delegated from an interactive agent session, such as a rescue run or a second opinion, rather than from an in-code pipeline. A person asked for this, is waiting on it, and will read the result themselves. | gpt-6.1-sol (medium) | gpt-6.1-sol (high) for a genuinely contested question | 2026-09-30 |
 | `investigate.delegated.worker` | Session-delegated investigation — worker | The cheap end of the same session-delegated work: one worker, one bounded question, a conclusion rather than a transcript. `gpt-reserve` and `gpt-5.4-mini` were retired on 2026-09-08 and are not choices here. | gpt-6.1-sol (low) | gpt-6-luna (low) | 2026-09-30 |
 | `code.agentic.interactive` | Interactive agentic coding session | A session a human is watching and steering. The model is chosen at spawn time and the human is the check on it, which is why this is the one lane where an operator-selected default is acceptable. Nothing unattended may use this slug. | claude-opus-5-5 for build and architecture; claude-sonnet-5-5 (medium) for routine work | claude-fable-5-1 only where Opus 5.5 at higher effort still fails on a hard, long-horizon problem | 2026-09-29 |
+| `code.agentic.worker` | Unattended implementation worker | A coding agent launched to carry one bounded case to done without a human watching each turn: it edits, tests and reports, and a supervisor wakes it when it stalls. The model is named at launch and never defaulted, because nobody is watching to notice a wrong one; reasoning effort defaults to high. Unlike `code.agentic.interactive`, no operator-selected default is acceptable here. | claude-sonnet-5-5 (high) for routine implementation; claude-opus-5-5 (high) for build and architecture | gpt-6.1-sol (high); gpt-6-luna (high) for mechanical work whose output code checks | 2026-10-07 |
 | `verify.unattended` | Unattended verification sweep | Scheduled grep-and-diff work: confirm recorded facts against the code, report what moved. Cheap and mechanical, so it belongs on the cheaper model however important the output is. | claude-sonnet-5-5 | — | 2026-09-29 |
 
 ## Changelog
+
+- **2026-10-07 — new lane `code.agentic.worker`.** Unattended implementation workers had no lane: the nearest,
+  `code.agentic.interactive`, admits an operator-selected default only because a human watches the session, and
+  says nothing unattended may use it. The new lane requires the model to be named at every launch and defaults
+  effort to high. Recommendations follow the interactive lane's Claude split; Sol and Luna are alternatives.
 
 - **2026-09-30 — GPT-6.1 Sol replaced both gpt-6-sol and gpt-6-astra.** gpt-6.1-sol (released 2026-09-29;
   $2/$10 per MTok, cached input $0.10) beats gpt-6-sol by 4 to 8 Intelligence Index points at every effort
