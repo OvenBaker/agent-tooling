@@ -56,10 +56,11 @@ LOG="$LOG_DIR/verify-$DATE.log"
 DRY_RUN=0
 FAKE_EXIT=0
 FAKE_DRIFT=0
+FAKE_STOPPED=0
 
 usage() {
   cat <<'USAGE'
-run-verify.sh [--dry-run [exit-code] [drift]]
+run-verify.sh [--dry-run [exit-code] [drift|stopped]]
 
   (no arguments)   Run the verification pass and surface the outcome in the work tracker.
   --dry-run        Do NOT call claude and do NOT POST. Print the decision and the exact curl that would be
@@ -67,6 +68,8 @@ run-verify.sh [--dry-run [exit-code] [drift]]
                    exit-code   integer to pretend claude exited with (default 0)
                    drift       the literal word `drift`, to pretend a chore/model-inventory-<date> branch
                                was created with a report block showing drift
+                   stopped     the literal word `stopped`, to pretend the pass stopped at setup and wrote a
+                               well-formed block that counts no site as checked
 USAGE
 }
 
@@ -74,7 +77,9 @@ if [[ "${1:-}" == "--dry-run" ]]; then
   DRY_RUN=1
   shift
   if [[ "${1:-}" =~ ^[0-9]+$ ]]; then FAKE_EXIT="$1"; shift; fi
-  if [[ "${1:-}" == "drift" ]]; then FAKE_DRIFT=1; shift; fi
+  if [[ "${1:-}" == "drift" ]]; then FAKE_DRIFT=1; shift
+  elif [[ "${1:-}" == "stopped" ]]; then FAKE_STOPPED=1; shift; fi
+  if [[ $# -gt 0 ]]; then usage >&2; exit 2; fi
 elif [[ $# -gt 0 ]]; then
   usage >&2
   exit 2
@@ -97,6 +102,9 @@ if [[ "$DRY_RUN" == 1 ]]; then
   if [[ "$FAKE_EXIT" == 0 && "$FAKE_DRIFT" == 1 ]]; then
     REPORT_BODY=$'MODEL-INVENTORY-REPORT\nconfirmed: 44\ndrifted: 2\ndiverged: 0\nnew-sites: 1\nretired: 1\nbranch: chore/model-inventory-'"$DATE"$'\ncommit: 4f1a9c2'
     BRANCH_PRESENT=1
+  elif [[ "$FAKE_EXIT" == 0 && "$FAKE_STOPPED" == 1 ]]; then
+    REPORT_BODY=$'MODEL-INVENTORY-REPORT\nconfirmed: 0\ndrifted: 0\ndiverged: 0\nnew-sites: 0\nretired: 0\nbranch: none\ncommit: none'
+    BRANCH_PRESENT=0
   elif [[ "$FAKE_EXIT" == 0 ]]; then
     REPORT_BODY=$'MODEL-INVENTORY-REPORT\nconfirmed: 44\ndrifted: 0\ndiverged: 0\nnew-sites: 0\nretired: 0\nbranch: none\ncommit: none'
     BRANCH_PRESENT=0
@@ -167,6 +175,17 @@ if [[ -n "$REPORT_BODY" ]]; then
   done
 fi
 
+# A well-formed block can still describe a pass that verified nothing. When setup stops the pass — most often
+# on the clean-tree check, because someone left edits uncommitted in the site-inventory repo — the prompt still
+# has it write the block, with every count at zero and no branch. Read naively that is the quiet outcome, and
+# it was: every pass from 2026-10-13 to 2026-11-11 stopped at setup and was logged as "nothing drifted". Every
+# site a real pass checks lands in `confirmed` or `drifted`, so a block where both are zero checked nothing.
+REPORT_STOPPED=0
+if [[ -n "$REPORT_BODY" && -z "$REPORT_INVALID" ]] \
+  && (( $(field confirmed) + $(field drifted) == 0 )); then
+  REPORT_STOPPED=1
+fi
+
 # ── Decide what the operator is shown ─────────────────────────────────────────────────────────────────────
 
 SURFACE=none
@@ -175,7 +194,7 @@ TITLE=''
 SUMMARY=''
 DETAIL=''
 
-if [[ "$EXIT_CODE" != 0 || -z "$REPORT_BODY" || -n "$REPORT_INVALID" ]]; then
+if [[ "$EXIT_CODE" != 0 || -z "$REPORT_BODY" || -n "$REPORT_INVALID" || "$REPORT_STOPPED" == 1 ]]; then
   SURFACE=failed
   SOURCE_ID="model-inventory-verify:$DATE"
   TITLE="Model inventory verification failed on $DATE"
@@ -184,6 +203,8 @@ if [[ "$EXIT_CODE" != 0 || -z "$REPORT_BODY" || -n "$REPORT_INVALID" ]]; then
     REASON="$REASON, no $REPORT_MARKER block in the log"
   elif [[ -n "$REPORT_INVALID" ]]; then
     REASON="$REASON, the $REPORT_MARKER block is incomplete ($REPORT_INVALID)"
+  elif [[ "$REPORT_STOPPED" == 1 ]]; then
+    REASON="$REASON, but the $REPORT_MARKER block counts no site as confirmed or drifted, so the pass stopped before verifying anything; its own reason is in the log lines below"
   fi
   SUMMARY="The every-14-days model inventory pass did not verify the inventory this cycle ($REASON). The site inventory is now unverified until someone runs it again. The last 20 lines of the log are below; the whole log is at $LOG."
   if [[ "$DRY_RUN" == 1 ]]; then

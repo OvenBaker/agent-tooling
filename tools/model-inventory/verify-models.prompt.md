@@ -213,3 +213,8 @@ only, never alternatives, and is reported every run — including a run where no
 site can be exactly as recorded and still be running a model its use case no longer recommends.
 `branch`/`commit` are `none` when nothing drifted and you therefore made no commit — that is the
 ordinary quiet outcome, not a failure.
+
+If setup stopped you, still write the block, with every count at zero and `branch`/`commit` as
+`none`, and say in the prose report above it exactly what stopped you and what would unblock the
+next run. The script reads a block with `confirmed` and `drifted` both zero as a pass that checked
+nothing, and surfaces it as a failure carrying the end of your prose, so the operator learns why.

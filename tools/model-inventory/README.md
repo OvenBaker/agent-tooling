@@ -42,7 +42,7 @@ on the ordinary window if he does not.
 
 | Outcome | What the operator sees |
 | --- | --- |
-| The pass failed — non-zero exit, or it finished without writing its `MODEL-INVENTORY-REPORT` block, or wrote one that is incomplete (a missing field, a count that is not an integer, an unfilled `<placeholder>`) | An item, "Model inventory verification failed on `<date>`", naming which of those it was, and carrying the exit code and the last 20 log lines. The unit also exits non-zero, so `systemctl --user status` agrees with the item. |
+| The pass failed — non-zero exit, or it finished without writing its `MODEL-INVENTORY-REPORT` block, or wrote one that is incomplete (a missing field, a count that is not an integer, an unfilled `<placeholder>`), or wrote one that counts no site as confirmed or drifted (it stopped before checking anything) | An item, "Model inventory verification failed on `<date>`", naming which of those it was, and carrying the exit code and the last 20 log lines. The unit also exits non-zero, so `systemctl --user status` agrees with the item. |
 | The pass found drift and committed it to `chore/model-inventory-<date>` | An item, "Model inventory drift found `<date>` — review branch `chore/model-inventory-<date>`", carrying the confirmed/drifted/diverged/new/retired counts. A branch nobody knows about is the same failure class as a silent failure, which is why this one is surfaced at all. |
 | The pass ran and nothing drifted | Nothing. The log is the record, and it carries the diverged count. |
 
@@ -62,6 +62,12 @@ block would find the earlier run's block still sitting in the file and be surfac
 the same reason the block is checked for completeness, not merely for presence: a bare marker line, or the
 block's own template echoed back with its `<placeholder>` values intact, is enough to make the block look
 present, and accepting it would exit 0 and record the inventory as verified for a cycle nobody verified.
+
+A complete block can still describe a pass that checked nothing. When setup stops the pass, most often because
+the site-inventory repo has uncommitted edits, the prompt still has it write the block, with every count at zero
+and no branch. Every site a real pass checks is counted as `confirmed` or `drifted`, so a block where both are
+zero is surfaced as a failure, and the log lines it carries include the pass's own account of what stopped it.
+Before this check, every pass from 2026-10-13 to 2026-11-11 stopped at setup and was logged as a quiet pass.
 
 If the POST itself fails, that goes in the log and the script exits non-zero, so systemd marks the unit failed
 and the journal carries it. A surfacing mechanism that can fail silently is worthless.
@@ -95,6 +101,7 @@ would send with the Access credentials redacted:
 ```
 ./tools/model-inventory/run-verify.sh --dry-run 1          # the failure branch
 ./tools/model-inventory/run-verify.sh --dry-run 0 drift    # the drift branch
+./tools/model-inventory/run-verify.sh --dry-run 0 stopped  # stopped at setup: the failure branch
 ./tools/model-inventory/run-verify.sh --dry-run 0          # the quiet branch, surfaces nothing
 ```
 
