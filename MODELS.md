@@ -40,16 +40,16 @@ deliberately, with the divergence report as its evidence. See `tools/model-inven
 
 | Slug | Use case | When to use it | Recommended | Acceptable alternatives | Last reviewed |
 |---|---|---|---|---|---|
-| `interp.contextual.low` | Cheap contextual interpretation and triage | High-volume judgement calls where a wrong answer is cheap to correct and latency matters more than nuance: sorting, first-pass triage, "does this still matter". | gpt-6.1-terra (low) | gpt-6-luna (low) | 2026-11-12 |
-| `interp.structured.medium` | Routine structured interpretation | The default lane. Reading structured or semi-structured input and producing a structured answer where correctness matters but the judgement is not contested. | gpt-6.1-sol (medium) | gpt-6.1-terra (medium) or gpt-6.1-sol (low) for cheaper passes | 2026-11-12 |
-| `interp.editorial.high` | Editorial or high-judgment synthesis | Work whose output a human will read as a considered opinion: agenda-setting, proposing changes, synthesising an argument from conflicting evidence. Reach for this only when the judgement is genuinely contested — it is the expensive lane. | gpt-6.1-sol (high) | claude-opus-5-5 (high) | 2026-11-12 |
+| `interp.contextual.low` | Cheap contextual interpretation and triage | High-volume judgement calls where a wrong answer is cheap to correct and latency matters more than nuance: sorting, first-pass triage, "does this still matter". | gpt-6.1-terra (low) | gpt-6-luna (low) | 2026-11-19 |
+| `interp.structured.medium` | Routine structured interpretation | The default lane. Reading structured or semi-structured input and producing a structured answer where correctness matters but the judgement is not contested. | gpt-6.2-sol (medium) | gpt-6.1-terra (medium) or gpt-6.2-sol (low) for cheaper passes | 2026-11-19 |
+| `interp.editorial.high` | Editorial or high-judgment synthesis | Work whose output a human will read as a considered opinion: agenda-setting, proposing changes, synthesising an argument from conflicting evidence. Reach for this only when the judgement is genuinely contested — it is the expensive lane. | gpt-6.2-sol (high) | claude-opus-5-5 (high) | 2026-11-19 |
 | `interp.command.fast` | Fast command interpretation | Turning a short natural-language instruction into a concrete command or parameter set, in a loop tight enough that the user is waiting on it. | claude-haiku-5-5 (low) | gpt-6-luna (low) | 2026-11-12 |
 
 ### Decisions
 
 | Slug | Use case | When to use it | Recommended | Acceptable alternatives | Last reviewed |
 |---|---|---|---|---|---|
-| `decide.typed.fast` | Typed decision, pre-filter or categorisation | Fixed questions about a text whose answers code acts on: yes or no, one of a fixed set of options, or a point on a scale, each returned with a probability and no prose. Typical jobs: routing a message to the path that handles it, deciding what reaches a bigger model, sorting items into a fixed set of labels. The model answers; it never does the work. Act only above a probability bar, and send everything under it, every error and every late answer to the lane that does the work, so a wrong decision costs time, not correctness. Ask only independent questions, and leave arithmetic, dates, copying text out and anything that needs a written reason to an LLM lane (`interp.contextual.low` when a sentence of reasoning is wanted). When a person is waiting, call the provider directly: a gateway in between added 150 ms or more, and over a second after a quiet minute. TypeSafe runs in the US and publishes no data-retention terms we have found. It is cleared for internal operational data; personal data needs its own decision. | jev-latest (TypeSafe), recording the version that answered with every reading | an exact Jev version, such as jev-1.14.0; gpt-6-luna on OpenAI's Decisions API | 2026-11-12 |
+| `decide.typed.fast` | Typed decision, pre-filter or categorisation | Fixed questions about a text whose answers code acts on: yes or no, one of a fixed set of options, or a point on a scale, each returned with a probability and no prose. Typical jobs: routing a message to the path that handles it, deciding what reaches a bigger model, sorting items into a fixed set of labels. The model answers; it never does the work. Act only above a probability bar, and send everything under it, every error and every late answer to the lane that does the work, so a wrong decision costs time, not correctness. Ask only independent questions, and leave arithmetic, dates, copying text out and anything that needs a written reason to an LLM lane (`interp.contextual.low` when a sentence of reasoning is wanted). When a person is waiting, call the provider directly: a gateway in between added 150 ms or more, and over a second after a quiet minute. TypeSafe runs in the US and publishes no data-retention terms we have found. It is cleared for internal operational data; personal data needs its own decision. | jev-latest (TypeSafe), recording the version that answered with every reading | an exact Jev version, such as jev-1.14.0; gpt-6-luna on OpenAI's Decisions API | 2026-11-19 |
 
 ### Conversation and speech
 
@@ -79,10 +79,10 @@ deliberately, with the divergence report as its evidence. See `tools/model-inven
 
 | Slug | Use case | When to use it | Recommended | Acceptable alternatives | Last reviewed |
 |---|---|---|---|---|---|
-| `classify.document.nightly` | Nightly document classification opinion | Unattended batch classification over documents, producing an advisory opinion rather than an enforced decision. | gpt-6.1-sol (low), on Batch or Flex where the schedule allows | gpt-6.1-terra (medium); gpt-6-luna (medium) | 2026-11-12 |
+| `classify.document.nightly` | Nightly document classification opinion | Unattended batch classification over documents, producing an advisory opinion rather than an enforced decision. | gpt-6.2-sol (low), on Batch or a discounted background window where the schedule allows | gpt-6.1-terra (medium); gpt-6-luna (medium) | 2026-11-19 |
 | `classify.fallback.overloaded` | Classification fallback when the primary provider is overloaded | The second path, taken only when the primary provider returns capacity errors. It must be a genuinely different provider — a fallback on the same account is not a fallback. | gpt-6.1-terra (medium) | gpt-6.1-terra (low) | 2026-11-12 |
 | `classify.session.router` | Session classification and summarisation router | A router that classifies or summarises captured sessions and lets the caller choose the model per request. It still needs a code-owned default: a router whose empty value means "whatever the CLI picks" is the failure this whole file exists to prevent. | claude-haiku-5-5 (medium) | claude-sonnet-5-5 | 2026-11-12 |
-| `gather.batch.structured` | Scheduled batch gather over messy sources | A scheduled pass across unstructured personal-operations sources — mail, calendar, chat, meeting notes — deciding what in them is actionable and emitting structured items that the calling code validates and reconciles. The judgment is the filtering, not the writing, and it runs unattended over a mixed and noisy input rather than over one clean corpus. | gpt-6.1-sol (low) | gpt-6.1-terra (medium), or (low) for a cheaper pass | 2026-11-12 |
+| `gather.batch.structured` | Scheduled batch gather over messy sources | A scheduled pass across unstructured personal-operations sources — mail, calendar, chat, meeting notes — deciding what in them is actionable and emitting structured items that the calling code validates and reconciles. The judgment is the filtering, not the writing, and it runs unattended over a mixed and noisy input rather than over one clean corpus. | gpt-6.2-sol (low) | gpt-6.1-terra (medium), or (low) for a cheaper pass | 2026-11-19 |
 | `summarize.digest` | Digest and backfill summarisation | Bulk summarisation of a backlog into digest form. Cheap per item, large item count, output read in aggregate. | claude-haiku-5-5 (low) | claude-sonnet-5-5 | 2026-11-12 |
 | `summarize.rolling.fold` | Rolling state fold | A scheduled fold of a prior state document plus the events since, into a document that replaces it. Not digest work: there is one document, people read it as the current state of something, and it accumulates, so a confidently invented line survives every later fold. Give this lane no weaker fallback — a skipped fold is free, because the events wait and the next run takes them, while a wrong fold is not. | gpt-6-luna (medium) | — | 2026-11-12 |
 
@@ -90,15 +90,46 @@ deliberately, with the divergence report as its evidence. See `tools/model-inven
 
 | Slug | Use case | When to use it | Recommended | Acceptable alternatives | Last reviewed |
 |---|---|---|---|---|---|
-| `investigate.fanout.orchestrator` | In-code investigation pipeline — orchestrator | The orchestrator half of a fan-out that lives inside a program: it decomposes a question into bounded tasks, then combines what the workers return into the answer. Both ends are judgment-heavy, which is why this lane runs high. | gpt-6.1-sol (high) | gpt-6.1-sol (low) where the decomposition is routine | 2026-11-12 |
+| `investigate.fanout.orchestrator` | In-code investigation pipeline — orchestrator | The orchestrator half of a fan-out that lives inside a program: it decomposes a question into bounded tasks, then combines what the workers return into the answer. Both ends are judgment-heavy, which is why this lane runs high. | gpt-6.2-sol (high) | gpt-6.2-sol (low) where the decomposition is routine | 2026-11-19 |
 | `investigate.fanout.worker` | In-code investigation pipeline — worker | One bounded read-only question answered against a repository, returning a finding plus citations that the calling code validates against real files and lines. Reached by a fan-out or by a single call; the unit of work is the same either way. | gpt-6-luna (medium) | gpt-6-luna (low) | 2026-11-12 |
-| `investigate.delegated.orchestrator` | Session-delegated investigation — orchestrator | Fan-out delegated from an interactive agent session, such as a rescue run or a second opinion, rather than from an in-code pipeline. A person asked for this, is waiting on it, and will read the result themselves. | gpt-6.1-sol (medium) | gpt-6.1-sol (high) for a genuinely contested question | 2026-11-12 |
-| `investigate.delegated.worker` | Session-delegated investigation — worker | The cheap end of the same session-delegated work: one worker, one bounded question, a conclusion rather than a transcript. `gpt-reserve` and `gpt-5.4-mini` were retired on 2026-09-08 and are not choices here. | gpt-6.1-sol (low) | gpt-6.1-terra (medium); gpt-6-luna (low) | 2026-11-12 |
-| `code.agentic.interactive` | Interactive agentic coding session | A session a human is watching and steering. The model is chosen at spawn time and the human is the check on it, which is why this is the one lane where an operator-selected default is acceptable. Nothing unattended may use this slug. | claude-opus-5-5 for build and architecture; claude-sonnet-5-5 (medium) for routine work | claude-fable-5-2 for hard, long-horizon problems, at twice Opus 5.5's price per token | 2026-11-12 |
-| `code.agentic.worker` | Unattended implementation worker | A coding agent launched to carry one bounded case to done without a human watching each turn: it edits, tests and reports, and a supervisor wakes it when it stalls. The model is named at launch and never defaulted, because nobody is watching to notice a wrong one; reasoning effort defaults to high. Unlike `code.agentic.interactive`, no operator-selected default is acceptable here. | claude-sonnet-5-5 (high) for routine implementation; claude-opus-5-5 (high) for build and architecture | gpt-6.1-sol (high); gpt-6-luna (high) for mechanical work whose output code checks | 2026-11-12 |
+| `investigate.delegated.orchestrator` | Session-delegated investigation — orchestrator | Fan-out delegated from an interactive agent session, such as a rescue run or a second opinion, rather than from an in-code pipeline. A person asked for this, is waiting on it, and will read the result themselves. | gpt-6.2-sol (medium) | gpt-6.2-sol (high) for a genuinely contested question | 2026-11-19 |
+| `investigate.delegated.worker` | Session-delegated investigation — worker | The cheap end of the same session-delegated work: one worker, one bounded question, a conclusion rather than a transcript. `gpt-reserve` and `gpt-5.4-mini` were retired on 2026-09-08 and are not choices here. | gpt-6.2-sol (low) | gpt-6.1-terra (medium); gpt-6-luna (low) | 2026-11-19 |
+| `code.agentic.interactive` | Interactive agentic coding session | A session a human is watching and steering. The model is chosen at spawn time and the human is the check on it, which is why this is the one lane where an operator-selected default is acceptable. Nothing unattended may use this slug. | claude-opus-5-5 for build and architecture; claude-sonnet-5-5 (medium) for routine work | claude-fable-5-2 for hard, long-horizon problems, at twice Opus 5.5's price per token; gpt-6.2-astra (medium) in Codex | 2026-11-19 |
+| `code.agentic.worker` | Unattended implementation worker | A coding agent launched to carry one bounded case to done without a human watching each turn: it edits, tests and reports, and a supervisor wakes it when it stalls. The model is named at launch and never defaulted, because nobody is watching to notice a wrong one; reasoning effort defaults to high. Unlike `code.agentic.interactive`, no operator-selected default is acceptable here. | claude-sonnet-5-5 (high) for routine implementation; claude-opus-5-5 (high) for build and architecture | gpt-6.2-sol (high); gpt-6-luna (high) for mechanical work whose output code checks | 2026-11-19 |
 | `verify.unattended` | Unattended verification sweep | Scheduled grep-and-diff work: confirm recorded facts against the code, report what moved. Cheap and mechanical, so it belongs on the cheaper model however important the output is. | claude-sonnet-5-5 | — | 2026-11-12 |
 
 ## Changelog
+
+- **2026-11-19 — GPT-6.2 Sol replaced GPT-6.1 Sol everywhere.** gpt-6.2-sol (released
+  2026-11-17) keeps gpt-6.1-sol's price, $2/$10 per MTok with cached input at $0.10, and beats it at every effort
+  on Intelligence Index v5.0.1: 41 against 35 at low, 53 against 46 at medium, 55 against 50 at high. It writes
+  fewer output tokens at every effort but one, costs $1.01 a task against $1.27 at max effort, and answers
+  sooner (first answer token after 3.3 s against 4.8 s at medium). AA-Briefcase moves the same way, 1541 against
+  1469 at high. Every lane that named gpt-6.1-sol, as its recommendation or an alternative, now names
+  gpt-6.2-sol at the same effort. `classify.document.nightly` now names Batch or a discounted background window instead of Flex, because
+  OpenAI lists no Flex tier for the 6.2 models.
+
+  One result points the other way. On Artificial Analysis's Coding Agent Index (Codex harness, max effort)
+  gpt-6.2-sol scores 49 against gpt-6.1-sol's 52, and the loss comes from a 14-point drop on SWE-Atlas-QnA, a
+  test of answering questions about a codebase, where Artificial Analysis finds it "more likely than its
+  predecessor to omit key facts". That is the investigation lanes' kind of work, but it is one benchmark at max
+  effort against gains everywhere else at a lower cost per task, so those lanes and `code.agentic.worker`'s
+  alternative moved with the rest. If delegated investigations start leaving facts out, look here first.
+  OpenAI has set no shutdown date for gpt-6.1-sol. It is dropped here, not retired, so sites still on it report
+  as drift.
+
+  gpt-6.2-astra costs $8/$40 per MTok, 20% below gpt-6-astra. It scores 60 at high effort for about $2 a task,
+  against gpt-6.2-sol (high) at 55 for well under $1. claude-opus-5-5 (high) leads both on AA-Briefcase (1682
+  against 1570 for Astra), so Astra is not added to the editorial lane. It is now the bare Codex CLI's default
+  here, at medium effort, and at 53 it is OpenAI's best model on the Coding Agent Index, so
+  `code.agentic.interactive` lists it as an alternative.
+
+  Checked and unchanged: OpenAI released no GPT-6.2 Terra or Luna, so the Terra and Luna lanes stay.
+  gpt-6.2-sol (low) now outscores gpt-6.1-terra (medium), 41 against 38, for about the same output cost. Terra
+  (medium) stays listed on the Sol-low lanes, but it no longer leads. `interp.contextual.low` stays on
+  gpt-6.1-terra (low): Sol at low writes as many output tokens at twice the price, for 41 against 29. The
+  Decisions API still runs only on gpt-6-luna, so `decide.typed.fast` is unchanged. The evidence is public
+  benchmarks and OpenAI's pricing and model pages, not our own workload.
 
 - **2026-11-12 — new lane `decide.typed.fast`, on TypeSafe's Jev.** Jev (released 2026-09-15) is a decision
   model, not a text model. It answers typed questions (yes or no, choose one, a point on a scale) with
@@ -213,7 +244,7 @@ deliberately, with the divergence report as its evidence. See `tools/model-inven
 
 ## Known CLI defaults
 
-The bare `codex` CLI on this machine defaults to **gpt-6.1-sol at high effort** (set in `~/.codex/config.toml`; the model's own built-in Codex default is low). Nothing unattended may
+The bare `codex` CLI on this machine defaults to **gpt-6.2-astra at medium effort** (set in `~/.codex/config.toml`; the model's own built-in Codex default is low). Nothing unattended may
 inherit it. That is not a judgement about the model — it is that an inherited default is a model nobody chose,
 which will change under us without a commit, a review or a signal.
 
